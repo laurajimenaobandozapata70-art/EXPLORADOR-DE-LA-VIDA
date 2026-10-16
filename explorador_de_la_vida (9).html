@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Explorador de la Vida</title>
+<style>
+:root{--blue:#1769e0;--green:#1da95b;--purple:#7047e8;--ink:#18304f;--pale:#eef7ff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:linear-gradient(135deg,#e9f7ff,#effff3);line-height:1.45}
+header{padding:24px 18px;background:linear-gradient(120deg,#1267db,#7047e8);color:white;text-align:center}header h1{margin:0;font-size:clamp(1.6rem,4vw,2.5rem)}header p{margin:8px 0 0}
+main{max-width:1050px;margin:auto;padding:18px}.tabs,.choices,.parts,.nav{display:flex;flex-wrap:wrap;gap:10px}
+button{border:0;border-radius:14px;padding:11px 15px;font-size:1rem;font-weight:700;cursor:pointer;background:#e8f1ff;color:#154b9a}
+button:hover,button:focus{outline:3px solid #a8d3ff}.primary{background:var(--green);color:white}.purple{background:var(--purple);color:white}
+.panel{background:white;border-radius:20px;padding:18px;margin:15px 0;box-shadow:0 7px 22px #163b6214}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.tile{border:2px solid #e0edff;border-radius:18px;padding:16px;background:white;text-align:left;color:var(--ink);min-height:115px}
+.tile .emoji{font-size:2.5rem;display:block}.tile strong{font-size:1.1rem}
+.small{color:#526b85;font-size:.93rem}.diagram{font-size:5rem;text-align:center;padding:15px;background:#f2f9ff;border-radius:18px}
+.part{background:#f1f8ff;border:1px solid #cfe5ff;border-radius:12px;padding:10px;flex:1 1 170px;text-align:left}
+.part b{display:block;color:#145ac0}.part span{font-size:.92rem}
+#feedback{font-weight:700;margin-top:12px}.progress{height:12px;border-radius:20px;background:#dce8f7;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,#1da95b,#64d88d);width:0}
+footer{text-align:center;padding:20px;color:#5c7188;font-size:.9rem}
+input[type=text]{font:inherit;padding:11px;border:2px solid #cbdff5;border-radius:12px;width:min(100%,350px)}
+@media(max-width:500px){main{padding:10px}.panel{padding:14px}}
+</style></head>
+<body>
+<header><h1>🌎 Explorador de la Vida</h1><p>Aprende jugando sobre animales, plantas, reproducción y cuidados.</p></header>
+<main>
+<div class="tabs" aria-label="Secciones">
+<button class="primary" onclick="showHome()">🏠 Inicio</button>
+<button onclick="showCategory('animal')">🐾 Animales</button>
+<button onclick="showCategory('plant')">🌱 Plantas</button>
+<button class="purple" onclick="startQuiz()">🎮 Juego de preguntas</button>
+</div>
+<section id="app" class="panel" aria-live="polite"></section>
+<footer>Material educativo. Si un animal está enfermo, pide ayuda a un adulto y consulta a un veterinario. No administres medicamentos por tu cuenta.</footer>
+</main>
+<script>
+const animals=[
+{id:'vaca',name:'Vaca',emoji:'🐄',kind:'animal',type:'Mamífero',food:'Herbívora: come pasto y forraje.',repro:'La fecundación es interna; la cría se desarrolla en el útero y nace viva.',parts:[['Ovarios','Producen óvulos y hormonas.'],['Oviductos','Transportan el óvulo; suele ocurrir allí la fecundación.'],['Útero','Lugar donde se desarrolla la cría.'],['Cérvix','Comunica el útero con la vagina.'],['Vagina','Parte del conducto reproductor femenino.'],['Testículos','En el macho producen espermatozoides y testosterona.']],care:'Agua limpia, alimento adecuado, sombra, higiene, vacunación indicada por el veterinario y revisiones periódicas.',alert:'Falta de apetito, dificultad para respirar, heridas, fiebre o parto complicado requieren atención veterinaria rápida.'},
+{id:'perro',name:'Perro',emoji:'🐕',kind:'animal',type:'Mamífero',food:'Omnívoro; necesita alimento completo para perros.',repro:'La fecundación es interna y las crías se desarrollan en el útero.',parts:[['Ovarios','Producen óvulos y hormonas.'],['Oviductos','Transportan los óvulos.'],['Útero','Donde crecen los embriones.'],['Vagina','Parte del tracto reproductor femenino.'],['Testículos','Producen espermatozoides en el macho.'],['Pene','Órgano reproductor masculino.']],care:'Agua, alimento apropiado, ejercicio seguro, vacunas, control de parásitos y chequeos veterinarios.',alert:'Dificultad para respirar, desmayo, sangrado importante, dolor intenso o posible intoxicación son urgencias.'},
+{id:'gallina',name:'Gallina',emoji:'🐔',kind:'animal',type:'Ave',food:'Come alimento balanceado; puede picotear semillas e insectos.',repro:'La fecundación es interna. Pone huevos y el embrión se desarrolla dentro del huevo incubado.',parts:[['Ovario','Produce la yema y los óvulos.'],['Oviducto','Añade clara y membranas; allí se forma el huevo.'],['Cloaca','Abertura común de los sistemas digestivo, urinario y reproductor.'],['Testículos','En el gallo producen espermatozoides.']],care:'Agua fresca, alimento adecuado, gallinero limpio y ventilado, espacio y protección contra depredadores.',alert:'Aislamiento, dificultad respiratoria, diarrea intensa o varias aves enfermas requieren orientación veterinaria.'},
+{id:'pez',name:'Pez',emoji:'🐠',kind:'animal',type:'Pez',food:'Depende de la especie: hay peces herbívoros, omnívoros y carnívoros.',repro:'Muchas especies liberan óvulos y espermatozoides en el agua; otras tienen fecundación interna.',parts:[['Gónadas','Ovarios o testículos producen células reproductoras.'],['Abertura genital','Permite liberar células reproductoras en muchas especies.'],['Branquias','No son reproductoras: permiten respirar bajo el agua.']],care:'Mantén agua de calidad adecuada a la especie, temperatura estable, filtro y alimentación correcta.',alert:'Respirar en la superficie, nadar de lado o cambios repentinos pueden indicar un problema del agua o de salud.'},
+{id:'gato',name:'Gato',emoji:'🐈',kind:'animal',type:'Mamífero',food:'Carnívoro; requiere alimento completo para gatos.',repro:'La fecundación es interna y los gatitos crecen en el útero.',parts:[['Ovarios','Producen óvulos y hormonas.'],['Útero','Lugar de desarrollo de los gatitos.'],['Vagina','Parte del tracto reproductor femenino.'],['Testículos','Producen espermatozoides en el macho.']],care:'Agua, alimento completo, caja de arena limpia, enriquecimiento, vacunas y revisiones.',alert:'No poder orinar, respiración difícil, traumatismos o debilidad extrema requieren atención urgente.'}
+];
+const plants=[
+{id:'flor',name:'Flor',emoji:'🌺',kind:'plant',type:'Planta con flor',food:'Fabrica azúcares con luz, agua y dióxido de carbono mediante fotosíntesis.',repro:'El polen llega al estigma; después de la fecundación se forman semillas y, a menudo, frutos.',parts:[['Estigma','Recibe el polen.'],['Estilo','Conecta el estigma con el ovario.'],['Ovario','Contiene óvulos; tras la fecundación puede formar el fruto.'],['Óvulos','Tras la fecundación se convierten en semillas.'],['Antera','Produce polen.'],['Filamento','Sostiene la antera.'],['Pétalos','Pueden atraer polinizadores.'],['Sépalo','Protege el capullo floral.']],care:'Luz apropiada para la especie, riego sin encharcar, sustrato adecuado y revisión de hojas y tallos.',alert:'Manchas que avanzan, tallos blandos o plagas extendidas pueden necesitar diagnóstico de jardinería o agronomía.'},
+{id:'frijol',name:'Planta de frijol',emoji:'🫘',kind:'plant',type:'Planta con flor',food:'Produce su alimento mediante fotosíntesis.',repro:'La flor se poliniza y forma una vaina con semillas; también puede crecer una nueva planta desde una semilla.',parts:[['Flor','Contiene las estructuras reproductoras.'],['Antera','Produce polen.'],['Estigma','Recibe el polen.'],['Ovario','Se desarrolla en la vaina.'],['Óvulo','Se desarrolla en semilla tras la fecundación.'],['Vaina','Fruto que protege las semillas.']],care:'Luz suficiente, riego equilibrado, suelo con buen drenaje y soporte si la variedad lo necesita.',alert:'Hojas amarillas o manchas pueden tener muchas causas; revisa agua, luz y plagas antes de actuar.'}
+];
+let score=0,answered=0,quizIndex=0;
+const questions=[
+{q:'¿Qué parte de la flor produce el polen?',opts:['Estigma','Antera','Pétalo'],a:1,why:'La antera produce el polen.'},
+{q:'¿Dónde se desarrolla la cría de una vaca?',opts:['En el útero','En el ovario','En el estómago'],a:0,why:'El embrión se desarrolla en el útero.'},
+{q:'¿Qué necesitan las plantas para hacer fotosíntesis?',opts:['Solo tierra','Luz, agua y dióxido de carbono','Solo fertilizante'],a:1,why:'La fotosíntesis usa luz, agua y dióxido de carbono.'},
+{q:'¿Qué debemos hacer si una mascota parece muy enferma?',opts:['Darle cualquier medicina','Esperar siempre','Pedir ayuda a un adulto y contactar al veterinario'],a:2,why:'El veterinario puede evaluar la causa y recomendar un tratamiento seguro.'},
+{q:'¿Qué parte de la flor recibe el polen?',opts:['Estigma','Raíz','Sépalo'],a:0,why:'El estigma recibe el polen.'}
+];
+function showHome(){document.getElementById('app').innerHTML=`<h2>¡Tu aventura comienza aquí! 🚀</h2><p>Elige un mundo, toca una ficha y descubre para qué sirve cada parte.</p><div class="grid"><button class="tile" onclick="showCategory('animal')"><span class="emoji">🐾</span><strong>Mundo animal</strong><p class="small">Reproducción, alimentación y cuidados.</p></button><button class="tile" onclick="showCategory('plant')"><span class="emoji">🌼</span><strong>Mundo vegetal</strong><p class="small">Flores, polinización y semillas.</p></button><button class="tile" onclick="startQuiz()"><span class="emoji">🏆</span><strong>Desafío relámpago</strong><p class="small">Responde preguntas y suma puntos.</p></button></div><p>⭐ Puntos del desafío: <b>${score}</b></p>`}
+function showCategory(kind){let data=kind==='animal'?animals:plants;document.getElementById('app').innerHTML=`<h2>${kind==='animal'?'🐾 Elige un animal':'🌱 Elige una planta'}</h2><div class="grid">${data.map(x=>`<button class="tile" onclick="detail('${kind}','${x.id}')"><span class="emoji">${x.emoji}</span><strong>${x.name}</strong><p class="small">${x.type} · Toca para explorar</p></button>`).join('')}</div>`}
+function detail(kind,id){let x=(kind==='animal'?animals:plants).find(z=>z.id===id);document.getElementById('app').innerHTML=`<button onclick="showCategory('${kind}')">← Volver</button><h2>${x.emoji} ${x.name}</h2><p><b>Tipo:</b> ${x.type}</p><p><b>Alimentación:</b> ${x.food}</p><div class="diagram" role="img" aria-label="Ilustración simbólica de ${x.name}">${x.emoji}</div><p class="small">Dibujo simbólico. Explora las partes etiquetadas en las fichas de abajo.</p><h3>🔎 Sus partes y funciones</h3><div class="parts">${x.parts.map(p=>`<button class="part" onclick="explain('${encodeURIComponent(p[0])}','${encodeURIComponent(p[1])}')"><b>📍 ${p[0]}</b><span>Toca para saber más</span></button>`).join('')}</div><div id="partInfo"></div><h3>🌱 ¿Cómo se reproduce?</h3><p>${x.repro}</p><h3>💚 Cuidados responsables</h3><p>${x.care}</p><div class="panel"><b>🚨 Señales de alerta</b><p>${x.alert}</p><p class="small">Esta guía es educativa y no sustituye la evaluación de un profesional.</p></div><button class="primary" onclick="startQuiz()">🎮 Jugar y comprobar lo aprendido</button>`}
+function explain(a,b){document.getElementById('partInfo').innerHTML=`<div class="panel"><h3>📘 ${decodeURIComponent(a)}</h3><p>${decodeURIComponent(b)}</p></div>`}
+function startQuiz(){quizIndex=0;score=0;answered=0;renderQuestion()}
+function renderQuestion(){let q=questions[quizIndex];if(!q){document.getElementById('app').innerHTML=`<h2>🏆 ¡Desafío terminado!</h2><p>Tu puntuación: <b>${score} de ${questions.length*10} puntos</b></p><div class="progress"><span style="width:${score/(questions.length*10)*100}%"></span></div><p>¡Sigue explorando para convertirte en guardián de la vida!</p><button class="primary" onclick="startQuiz()">Volver a jugar</button> <button onclick="showHome()">Inicio</button>`;return}document.getElementById('app').innerHTML=`<h2>🎮 Desafío ${quizIndex+1} de ${questions.length}</h2><div class="progress"><span style="width:${quizIndex/questions.length*100}%"></span></div><h3>${q.q}</h3><div class="choices">${q.opts.map((o,i)=>`<button class="tile" onclick="answer(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}</div><p id="feedback"></p>`}
+function answer(i){let q=questions[quizIndex],f=document.getElementById('feedback');if(!f||f.dataset.done)return;f.dataset.done='1';if(i===q.a){score+=10;f.textContent='✅ ¡Correcto! '+q.why;f.style.color='#16864a'}else{f.textContent='💡 Casi. '+q.why;f.style.color='#a45b00'}let btn=document.createElement('button');btn.className='primary';btn.textContent=quizIndex===questions.length-1?'Ver resultado':'Siguiente pregunta →';btn.onclick=()=>{quizIndex++;renderQuestion()};f.after(btn)}
+showHome();
+</script></body></html>
